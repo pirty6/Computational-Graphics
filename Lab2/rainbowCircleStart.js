@@ -46,11 +46,12 @@ function initializeScene() {
                 if (rainbowCircleGeometry.vertices.length > 3) {
                     rainbowCircleGeometry.faces.push(new THREE.Face3(
                         rainbowCircleGeometry.vertices.length - 1
-                        , rainbowCircleGeometry.vertices.length - 10
+                        , rainbowCircleGeometry.vertices.length - 15
                         , rainbowCircleGeometry.vertices.length - 18));
-                    rainbowCircleGeometry.faces[rainbowCircleGeometry.faces.length - 1].vertexColors[0] = new THREE.Color(Math.cos(i), Math.sin(i), 0.5);
-                    rainbowCircleGeometry.faces[rainbowCircleGeometry.faces.length - 1].vertexColors[1] = new THREE.Color(Math.cos(i), Math.sin(i), 0.5);
-                    rainbowCircleGeometry.faces[rainbowCircleGeometry.faces.length - 1].vertexColors[2] = new THREE.Color(Math.cos(i), Math.sin(i), 0.5);
+                    var hue = i/17;
+                    rainbowCircleGeometry.faces[rainbowCircleGeometry.faces.length - 1].vertexColors[0] = new THREE.Color(hue, Math.cos(angle), Math.sin(angle));
+                    rainbowCircleGeometry.faces[rainbowCircleGeometry.faces.length - 1].vertexColors[1] = new THREE.Color(hue, Math.cos(angle), Math.sin(angle));
+                    rainbowCircleGeometry.faces[rainbowCircleGeometry.faces.length - 1].vertexColors[2] = new THREE.Color(hue, Math.cos(angle), Math.sin(angle));
                 }
             }
         }
