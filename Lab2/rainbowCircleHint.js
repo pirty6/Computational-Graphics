@@ -135,89 +135,46 @@ function initializeScene() {
     //We rotate around the circle incrementally, adding vertices outward to one "spoke" at a time.
     for (var d = 0; d <= 360; d = d + 10) {
         var angle = Math.PI * (d / 180);
-
-        //We use the sine and cosine of the angle to arrive at the innermost vertex.
-
-        //rainbowCircleGeometry.vertices.push(new THREE.Vector3(Math.sin(angle), Math.cos(angle), 0));
-        //    We don 't start building faces until we've completed at least one spoke of the wheel.
-        //Create the face if there 's at least 3 vertices
-        //        if (rainbowCircleGeometry.vertices.length > 17) {
-        //            //Think about which vertices to add to the face.
-        //            rainbowCircleGeometry.faces.push(new THREE.Face3(
-        //                rainbowCircleGeometry.vertices.length - 1
-        //                , rainbowCircleGeometry.vertices.length - 17
-        //                , rainbowCircleGeometry.vertices.length - 18));
-        //            //Here we create vertex colors for each face, one vertex at a time.
-        //            //Think about which colors should go with each vertex to obtain the results you want.
-        //            rainbowCircleGeometry.faces[rainbowCircleGeometry.faces.length - 1].vertexColors[0] = new THREE.Color(1, 0, 0);
-        //            rainbowCircleGeometry.faces[rainbowCircleGeometry.faces.length - 1].vertexColors[1] = new THREE.Color(0, 1, 0);
-        //            rainbowCircleGeometry.faces[rainbowCircleGeometry.faces.length - 1].vertexColors[2] = new THREE.Color(1, 0, 0);
-        //        }
-        for (var i = 1; i <= 17; i++) {
+        for (var i = 1; i <= 18; i++) {
             //This is the next vertex out. Because it's the middle vertex on the spoke, it's
             //part of two different faces.
             rainbowCircleGeometry.vertices.push(new THREE.Vector3(Math.sin(angle) * i, Math.cos(angle) * i, 0));
             //Create the face if there's at least 3 vertices
-            if (rainbowCircleGeometry.vertices.length > 17) {
+            if (rainbowCircleGeometry.vertices.length > 18) {
                 //if (rainbowCircleGeometry.vertices.length / 34 == 1) {
-                var result = rainbowCircleGeometry.vertices.length / 17;
-                var hue = i / 17;
+                var result = rainbowCircleGeometry.vertices.length / 18;
+                var hue = i / 18;
                 if ((Number.isInteger(result)) == true) {
                     rainbowCircleGeometry.faces.push(new THREE.Face3(
                         rainbowCircleGeometry.vertices.length - 1
                         , rainbowCircleGeometry.vertices.length - 2
-                        , rainbowCircleGeometry.vertices.length - 18));
-                    rainbowCircleGeometry.faces[rainbowCircleGeometry.faces.length - 1].vertexColors[0] = new THREE.Color(hue, Math.cos(angle), Math.sin(angle));
-                    rainbowCircleGeometry.faces[rainbowCircleGeometry.faces.length - 1].vertexColors[1] = new THREE.Color(hue, Math.cos(angle), Math.sin(angle));
-                    rainbowCircleGeometry.faces[rainbowCircleGeometry.faces.length - 1].vertexColors[2] = new THREE.Color(hue, Math.cos(angle), Math.sin(angle));
+                        , rainbowCircleGeometry.vertices.length - 19));
+                    rainbowCircleGeometry.faces[rainbowCircleGeometry.faces.length - 1].vertexColors[0] = new THREE.Color("hsl("+ 360 * i / 18 +", 80%, 50%)");
+                    rainbowCircleGeometry.faces[rainbowCircleGeometry.faces.length - 1].vertexColors[1] = new THREE.Color("hsl("+ 360 * i / 18 +", 80%, 50%)");
+                    rainbowCircleGeometry.faces[rainbowCircleGeometry.faces.length - 1].vertexColors[2] = new THREE.Color("hsl("+ 360 * i / 18 +", 80%, 50%)");
                 } else {
                     rainbowCircleGeometry.faces.push(new THREE.Face3(
                         rainbowCircleGeometry.vertices.length - 1
-                        , rainbowCircleGeometry.vertices.length - 17
-                        , rainbowCircleGeometry.vertices.length - 18));
-
-                    rainbowCircleGeometry.faces[rainbowCircleGeometry.faces.length - 1].vertexColors[0] = new THREE.Color(hue, Math.cos(angle), Math.sin(angle));
-                    rainbowCircleGeometry.faces[rainbowCircleGeometry.faces.length - 1].vertexColors[1] = new THREE.Color(hue, Math.cos(angle), Math.sin(angle));
-                    rainbowCircleGeometry.faces[rainbowCircleGeometry.faces.length - 1].vertexColors[2] = new THREE.Color(hue, Math.cos(angle), Math.sin(angle));
+                        , rainbowCircleGeometry.vertices.length - 19
+                        , rainbowCircleGeometry.vertices.length - 19));
+                    rainbowCircleGeometry.faces[rainbowCircleGeometry.faces.length - 1].vertexColors[0] = new THREE.Color("hsl("+ 360 * i / 18 +", 80%, 50%)");
+                    rainbowCircleGeometry.faces[rainbowCircleGeometry.faces.length - 1].vertexColors[1] = new THREE.Color("hsl("+ 360 * i / 18 +", 80%, 50%)");
+                    rainbowCircleGeometry.faces[rainbowCircleGeometry.faces.length - 1].vertexColors[2] = new THREE.Color("hsl("+ 360 * i / 18 +", 80%, 50%)");
                     rainbowCircleGeometry.faces.push(new THREE.Face3(
                         rainbowCircleGeometry.vertices.length - 1
                         , rainbowCircleGeometry.vertices.length - 2
-                        , rainbowCircleGeometry.vertices.length - 18));
-                    rainbowCircleGeometry.faces[rainbowCircleGeometry.faces.length - 1].vertexColors[0] = new THREE.Color(hue, Math.cos(angle), Math.sin(angle));
-                    rainbowCircleGeometry.faces[rainbowCircleGeometry.faces.length - 1].vertexColors[1] = new THREE.Color(hue, Math.cos(angle), Math.sin(angle));
-                    rainbowCircleGeometry.faces[rainbowCircleGeometry.faces.length - 1].vertexColors[2] = new THREE.Color(hue, Math.cos(angle), Math.sin(angle));
-
-
+                        , rainbowCircleGeometry.vertices.length - 19));
+                    rainbowCircleGeometry.faces[rainbowCircleGeometry.faces.length - 1].vertexColors[0] = new THREE.Color("hsl("+ 360 * i / 18 +", 80%, 50%)");
+                    rainbowCircleGeometry.faces[rainbowCircleGeometry.faces.length - 1].vertexColors[1] = new THREE.Color("hsl("+ 360 * i / 18 +", 80%, 50%)");
+                    rainbowCircleGeometry.faces[rainbowCircleGeometry.faces.length - 1].vertexColors[2] = new THREE.Color("hsl("+ 360 * i / 18 +", 80%, 50%)");
                 }
-                /*rainbowCircleGeometry.faces.push(new THREE.Face3(
-    rainbowCircleGeometry.vertices.length - 1
-    , rainbowCircleGeometry.vertices.length - 17
-    , rainbowCircleGeometry.vertices.length - 18));
-rainbowCircleGeometry.faces[rainbowCircleGeometry.faces.length - 1].vertexColors[0] = new THREE.Color(0, 1, 0);
-rainbowCircleGeometry.faces[rainbowCircleGeometry.faces.length - 1].vertexColors[1] = new THREE.Color(0, 0, 1);
-rainbowCircleGeometry.faces[rainbowCircleGeometry.faces.length - 1].vertexColors[2] = new THREE.Color(0, 1, 0);*/
             }
         }
-
-        //rainbowCircleGeometry.vertices.push(new THREE.Vector3(Math.sin(angle) * 17, Math.cos(angle) * 17, 0));
-
-        //Create the face if there's at least 3 vertices
-        //               if (rainbowCircleGeometry.vertices.length > 17) {
-        //                   rainbowCircleGeometry.faces.push(new THREE.Face3(
-        //                       rainbowCircleGeometry.vertices.length - 1
-        //                       , rainbowCircleGeometry.vertices.length - 2
-        //                       , rainbowCircleGeometry.vertices.length - 18));
-        //                   rainbowCircleGeometry.faces[rainbowCircleGeometry.faces.length - 1].vertexColors[0] = new THREE.Color(0, 0, 1);
-        //                   rainbowCircleGeometry.faces[rainbowCircleGeometry.faces.length - 1].vertexColors[1] = new THREE.Color(0, 0, 1);
-        //                   rainbowCircleGeometry.faces[rainbowCircleGeometry.faces.length - 1].vertexColors[2] = new THREE.Color(0, 1, 0);
-        //               }
-
-
     }
 
     var rainbowCircleMat = new THREE.MeshBasicMaterial({
         vertexColors: THREE.VertexColors
-            //, wireframe: true
+        //, wireframe: true
         , side: THREE.DoubleSide
     });
 
