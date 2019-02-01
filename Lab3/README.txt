@@ -1,36 +1,27 @@
 /**********************************************************************
  *  README.txt
- *  TC3022 - Homework 2: Rainbow circle
+ *  TC3022- Rubber Ball
  **********************************************************************/
 
 /**********************************************************************
 * What is your name?
 ***********************************************************************/
-Mariana Pérez García - A01206747
+
+Mariana Pérez García
+
 
 
 /**********************************************************************
 * What browser and operating system did you test your program with?
 ***********************************************************************/
 
-Chrome and Ubuntu
-
-
-
-/**********************************************************************
-* Did you refer to the hint file to complete the assignment, or did
-* you do it entirely from the start file?
-***********************************************************************/
-
-YES, I used the hint file
-
-
+Chrome Ubuntu
 
 /**********************************************************************
 * Approximately how many hours did you spend working on this assignment?
 ***********************************************************************/
 
-4
+1 hour
 
 
 
@@ -40,7 +31,7 @@ YES, I used the hint file
  * How can I make this assignment better?
  **********************************************************************/
 
-It was really complicated to understand
+I wrote math.floor and therefore I wasn't getting it correct
 
 
 
@@ -50,4 +41,4 @@ It was really complicated to understand
  * doing the assignment, whether you enjoyed doing it, etc.
  **********************************************************************/
 
-I don't think I was totally prepared for this lab
+It was a cool assignment
