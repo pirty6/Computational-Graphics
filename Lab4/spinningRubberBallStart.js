@@ -140,7 +140,7 @@ function render() {
 	if(spinSpeed < 0.005) {
 		spinSpeed = 0;
 	} else {
-		spinSpeed-=0.02;
+		spinSpeed = spinSpeed * (1-0.02);
 	}
 	spinAngle = spinAngle + spinSpeed;
 
