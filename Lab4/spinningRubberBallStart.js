@@ -128,21 +128,11 @@ function render() {
 		spinAngle = spinAngle - Math.PI * 2;
 	}
 
-	/*
-	TODO: We need to do a couple of things with spinSpeed. First, we set it
-	based on the swipe, which happens in the onMouseMove function. Then, we want
-	it to gradually slow down and eventually stop. We do that
-	here. Check whether spinSpeed is above some small threshold. If it's below the
-	threshold, set it to 0. If it's above the threshold, reduce it's value to make it
-	slow down in a natural-looking way. This does not need to be physically accurate,
-	just reasonably natural looking.
-	*/
+	spinAngle = spinAngle + spinSpeed;
 	if(spinSpeed < 0.005) {
 		spinSpeed = 0;
-	} else {
-		spinSpeed = spinSpeed * (1-0.02);
 	}
-	spinAngle = spinAngle + spinSpeed;
+	spinSpeed = spinSpeed * (1-0.02);
 
 	// setting matrix values directly requires disabling autoupdate
 	kooshball.matrixAutoUpdate = false;
@@ -204,6 +194,7 @@ function onMouseMove(evt) {
 	  evt.preventDefault();
 		// Get a point in 3D space corresponding to the end (so far) of the mouse swipe.
 		swipeEnd = getMousePoint(evt.clientX, evt.clientY);
+		console.log('start');
 
 		/*
 		TODO: We need a vector to represent the swipe so far. We have the point that the
@@ -216,13 +207,14 @@ function onMouseMove(evt) {
 	 	You'll need to create a THREE.Vector3 object to represent the swipe vector.
 		*/
 
-		var swipe = swipeEnd.clone().sub(swipeStart);
-    spinAxis = swipe.clone().cross(camera.position.clone()).normalize();
-    var elapsedtime = clock.getDelta();
-    if (swipe.length() > 20) {
-			const speedCoefficient = 1 / 5000;
-      spinSpeed = speedCoefficient * swipe.length() / elapsedtime;
-    }
+		// BEGIN CHANGES
+					 swipe = swipeEnd.clone().sub(swipeStart);
+					 spinAxis = swipe.clone().cross(camera.position.clone()).normalize();
+					 var elapsedtime = clock.getDelta();
+					 if (swipe.length() > 20) {
+							 const speedCoefficient = 1 / 50000;
+							 spinSpeed = speedCoefficient * swipe.length() / elapsedtime;
+					}
 
 		/*
 		TODO: Once you've got the swipe vector, you'll need to set the spinAxis for the
