@@ -1,11 +1,12 @@
 /**********************************************************************
  *  README.txt
- *  TC3022 - Spinning Rubber Ball
+ *  TC3022 - Barycentric coordinates
  **********************************************************************/
 
 /**********************************************************************
 * What is your name?
 ***********************************************************************/
+
 Mariana Pérez García
 
 
@@ -14,7 +15,7 @@ Mariana Pérez García
 * What browser and operating system did you test your program with?
 ***********************************************************************/
 
-Ubuntu and Chrome
+Chrome and Ubuntu
 
 
 /**********************************************************************
@@ -31,8 +32,7 @@ Ubuntu and Chrome
  * How can I make this assignment better?
  **********************************************************************/
 
-This assignment was good.
-
+I like this kind of challenges where it is very visual
 
 
 /**********************************************************************
@@ -40,5 +40,3 @@ This assignment was good.
  * here. Feel free to provide any feedback on what you learned from
  * doing the assignment, whether you enjoyed doing it, etc.
  **********************************************************************/
-
-I made the challenge too

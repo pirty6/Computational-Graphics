@@ -199,8 +199,8 @@ function onMouseMove(evt) {
 
 
 		// BEGIN CHANGES
-		//swipe = swipeEnd.clone().sub(swipeStart);
-		swipe = swipeStart.clone().sub(swipeEnd);
+		swipe = swipeEnd.clone().sub(swipeStart);
+		//swipe = swipeStart.clone().sub(swipeEnd);
 		spinAxis = swipe.clone().cross(camera.position.clone()).normalize();
 		spinSpeed = (swipe.length() * elapsedtime) / 8000;
 

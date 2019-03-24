@@ -1,12 +1,13 @@
 /**********************************************************************
  *  README.txt
- *  TC3022 - Spinning Rubber Ball
+ *  TC3022 - Elephant (camera setup)
  **********************************************************************/
 
 /**********************************************************************
 * What is your name?
 ***********************************************************************/
-Mariana Pérez García
+
+Mariana
 
 
 
@@ -17,11 +18,12 @@ Mariana Pérez García
 Ubuntu and Chrome
 
 
+
 /**********************************************************************
 * Approximately how many hours did you spend working on this assignment?
 ***********************************************************************/
 
-2 hours
+1 hour
 
 
 
@@ -31,7 +33,7 @@ Ubuntu and Chrome
  * How can I make this assignment better?
  **********************************************************************/
 
-This assignment was good.
+It was a good practice to learn about the camera position
 
 
 
@@ -40,5 +42,3 @@ This assignment was good.
  * here. Feel free to provide any feedback on what you learned from
  * doing the assignment, whether you enjoyed doing it, etc.
  **********************************************************************/
-
-I made the challenge too

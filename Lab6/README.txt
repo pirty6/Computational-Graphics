@@ -1,11 +1,12 @@
 /**********************************************************************
  *  README.txt
- *  TC3022 - Spinning Rubber Ball
+ *  TC3022 - Robot
  **********************************************************************/
 
 /**********************************************************************
 * What is your name?
 ***********************************************************************/
+
 Mariana Pérez García
 
 
@@ -17,11 +18,12 @@ Mariana Pérez García
 Ubuntu and Chrome
 
 
+
 /**********************************************************************
 * Approximately how many hours did you spend working on this assignment?
 ***********************************************************************/
 
-2 hours
+3 hours
 
 
 
@@ -31,7 +33,7 @@ Ubuntu and Chrome
  * How can I make this assignment better?
  **********************************************************************/
 
-This assignment was good.
+None, it was a fun assignment
 
 
 
@@ -40,5 +42,3 @@ This assignment was good.
  * here. Feel free to provide any feedback on what you learned from
  * doing the assignment, whether you enjoyed doing it, etc.
  **********************************************************************/
-
-I made the challenge too
