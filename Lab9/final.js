@@ -54,23 +54,16 @@ Sphere.prototype.normal = function(point) {
 
 // Return the intersection point or null if it does not exist.
 Sphere.prototype.intersects = function(ray) {
-  var raydir = new THREE.Vector3().copy(ray.direction);
-  var rayorig = new THREE.Vector3().copy(ray.origin);
-  var pos = this.center;
-  var rad = this.radius;
-  // var a = raydir.dot(raydir);
   var a = ray.direction.dot(ray.direction);
   var b = 2 * (ray.direction.dot(new THREE.Vector3().subVectors(ray.origin, this.center)));
   var c = (new THREE.Vector3().subVectors(ray.origin, this.center).dot(new THREE.Vector3().subVectors(ray.origin, this.center))) - Math.pow(this.radius, 2);
   var t = Math.pow(b, 2) - 4 * a * c;
   if(t > 0) {
     t = Math.sqrt(t);
-    t = (b + t) / (-2 * a);
+    t = (-b - t) / (2 * a);
     if (0 < t) {
       var distance = t * Math.sqrt(a);
-      var intersection = new THREE.Vector3().copy(raydir).multiplyScalar(t).add(rayorig);
-      var normal = new THREE.Vector3().subVectors(intersection, pos).multiplyScalar(1 / rad).normalize();
-      return intersection;
+      var intersection = new THREE.Vector3().copy(ray.direction).multiplyScalar(t).add(ray.origin);
     }
   }
   return null;
