@@ -7,7 +7,7 @@ var DEBUG = false; //whether to show debug messages
 var EPSILON = 0.00001; //error margins
 
 //scene to render
-var scene, camera, surfaces, materials, lights, shadow; //etc...
+var scene, camera, surfaces, materials, lights, shadow_bias, bounce_depth; //etc...
 
 // OBJECTS
 var Camera = function(eye, at, up, fovy, aspect) {
@@ -34,23 +34,36 @@ Camera.prototype.castRay = function(x, y) {
   return new Ray(this.eye, new THREE.Vector3().addVectors(direction, this.back_vector.clone().multiplyScalar(-1)).normalize());
 }
 
-var Sphere = function(center, material, radius) {
+var Sphere = function(center, material, radius, objname, transforms) {
+  Surface.call(this, material, objname, transforms);
   this.material = material;
   this.center = center;
   this.radius = radius;
 };
 
+Sphere.prototype.normal = function(point) {
+    return new THREE.Vector3().subVectors(point, this.center).normalize();
+}
+
 Sphere.prototype.intersects = function(ray) {
-  var a = ray.direction.dot(ray.direction);
-  var b = 2 * (ray.direction.dot(new THREE.Vector3().subVectors(ray.origin, this.center)));
-  var c = (new THREE.Vector3().subVectors(ray.origin, this.center).dot(new THREE.Vector3().subVectors(ray.origin, this.center))) - Math.pow(this.radius, 2);
-  var t = Math.pow(b, 2) - 4 * a * c;
-  if(t < 0) {
-    // The ray doesn't intersects the sphere
-    return false;
+  var raydir = new THREE.Vector3().copy(ray.direction);
+  var rayorig = new THREE.Vector3().copy(ray.origin);
+  var pos = this.center;
+  var rad = this.radius;
+  var a = raydir.dot(raydir);
+  var b = raydir.dot(new THREE.Vector3().subVectors(rayorig, pos).multiplyScalar(2));
+  var c = pos.dot(pos) + rayorig.dot(rayorig) - rayorig.dot(pos) * 2 - rad * rad;
+  var D = b * b - 4 * a * c;
+  if (D < 0) return null;
+  D = Math.sqrt(D);
+  var t = (b + D) / (-2 * a);
+  if (0 < t) {
+      var distance = t * Math.sqrt(a);
+      var intersection = new THREE.Vector3().copy(raydir).multiplyScalar(t).add(rayorig);
+      var normal = new THREE.Vector3().subVectors(intersection, pos).multiplyScalar(1 / rad).normalize();
+      return intersection;
   }
-  // The ray intersects the sphere
-  return true;
+  return null;
 };
 
 var Triangle = function(p1, p2, p3, material) {
@@ -88,21 +101,31 @@ var Material = function(ka, kd, ks, kr, shininess) {
 
 var AmbientLight = function(source, color) {
   // this.source = source;
-  this.color = color;
+  // this.color = color;
+  Light.call(this, source, color);
 };
 
 var PointLight = function(source, position, color) {
   // this.source = source;
-  this.position = position;
-  this.color = color;
+  // this.position = position;
+  // this.color = color;
+  Light.call(this, source, color);
+  this.position = new THREE.Vector3().fromArray(position);
 };
 
 PointLight.prototype.getDirection = function(point) {
     return new THREE.Vector3().subVectors(this.position, point).normalize();
 }
 
-var DirectionalLight = function() {
+var DirectionalLight = function(source, color, direction) {
+  // this.color = color;
+  // this.direction = direction;
+  Light.call(this, source, color);
+  this.direction = new THREE.Vector3().fromArray(direction).normalize().negate();
+}
 
+DirectionalLight.prototype.getDirection = function(point) {
+    return this.direction;
 }
 
 var Ray = function(origin, direction) {
@@ -113,6 +136,17 @@ var Ray = function(origin, direction) {
 var Intersection = function(origin, direction) {
   this.origin = origin;
   this.direction = direction;
+}
+
+var Light = function(source, color) {
+    this.source = source;
+    this.color = color;
+}
+
+var Surface = function(material, objname, transforms) {
+    this.material = material;
+    this.objname = objname;
+    this.transforms = transforms;
 }
 
 //initializes the canvas and drawing buffers
@@ -133,7 +167,8 @@ function loadSceneFile(filepath) {
   var camera_up = new THREE.Vector3().fromArray(scene.camera.up);
   camera = new Camera(camera_eye, camera_at, camera_up, scene.camera.fovy, scene.camera.aspect);
   //TODO - set up surfaces
-  shadow = scene.shadow_bias;
+  shadow_bias = scene.shadow_bias;
+  bounce_depth = bounce_depth;
   surfaces = [];
   console.log(scene.surfaces);
   for(var i = 0; i < scene.surfaces.length; i++) {
@@ -159,6 +194,8 @@ function loadSceneFile(filepath) {
       lights.push(new AmbientLight(scene.lights[i].source, scene.lights[i].color));
     } else if(scene.lights[i].source === "Point") {
       lights.push(new PointLight(scene.lights[i].source, scene.lights[i].position, scene.lights[i].color));
+    } else if(scene.lights[i].source === "Directional") {
+      lights.push(new DirectionalLight(lights[i].source, scene.lights[i].color, scene.lights[i].direction));
     }
   }
   console.log(lights);
@@ -167,30 +204,85 @@ function loadSceneFile(filepath) {
 
 function renderEverything(x, y) {
   var ray = camera.castRay(x, y);
-  var color = [0, 0, 0];
-  var distance, intersection;
-  for (var i = 0; i < surfaces.length; i++) {
-    if(surfaces[i].intersects(ray)) {
-      color = getColor(ray, surfaces[i], distance, intersection);
-    }
-  }
+  var color = trace(ray, 0);
   setPixel(x, y, color);
 }
 
+function trace(ray, depth) {
+    const black = [0, 0, 0];
+    if (depth > bounce_depth) return;
 
-function getColor(ray, surface, distance, intersection) {
-  var R = 0, G = 0, B = 0;
-  var material = materials[surface.material];
-    for(var i = 0; i < lights.length; i++) {
-    if(lights[i] instanceof(AmbientLight)) {
-      R += (material.ka[0] * lights[i].color[0]);
-      G += (material.ka[1] * lights[i].color[1]);
-      B += (material.ka[2] * lights[i].color[2]);
+    var closest = closestSurface(ray);
+    if (closest.surface === null) return black;
+
+    var surface = closest.surface;
+    var intersection = closest.intersection;
+    var material = materials[surface.material];
+
+    var R = 0;
+    var G = 0;
+    var B = 0;
+
+    for (var light of lights) {
+        if (light instanceof AmbientLight) {
+            // Ambient Shading Calculation
+            var aR = material.ka[0] * light.color[0];
+            var aG = material.ka[1] * light.color[1];
+            var aB = material.ka[2] * light.color[2];
+            R = R + aR;
+            G = G + aG;
+            B = B + aB;
+        } else {
+            var light2intersection = light.getDirection(intersection);
+            var normal = surface.normal(intersection);
+
+            var lightRay = {
+                "origin": new THREE.Vector3().copy(normal).multiplyScalar(shadow_bias).add(intersection),
+                "direction": light2intersection
+            };
+
+            var shadowCaster = closestSurface(lightRay);
+            if (shadowCaster.surface === null) {
+                var h = new THREE.Vector3().copy(ray.direction).negate().add(light2intersection).normalize();
+
+                var dR = material.kd[0] * light.color[0] * Math.max(0, normal.dot(light2intersection));
+                var dG = material.kd[1] * light.color[1] * Math.max(0, normal.dot(light2intersection));
+                var dB = material.kd[2] * light.color[2] * Math.max(0, normal.dot(light2intersection));
+
+                var p = material.shininess;
+                var kR = material.ks[0] * light.color[0] * Math.pow(Math.max(0, normal.dot(h)), p);
+                var kG = material.ks[1] * light.color[1] * Math.pow(Math.max(0, normal.dot(h)), p);
+                var kB = material.ks[2] * light.color[2] * Math.pow(Math.max(0, normal.dot(h)), p);
+
+                R = R + dR + kR;
+                G = G + dG + kG;
+                B = B + dB + kB;
+            }
+        }
     }
-  }
-  return [R, G, B];
+    return [R, G, B];
 }
 
+function closestSurface(ray) {
+    var surface = null
+    var intersection = null;
+    var distance = Infinity;
+    for (var currentSurface of surfaces) {
+        var currentIntersection = currentSurface.intersects(ray);
+        if (currentIntersection === null) continue;
+        var currentDistance = (ray.origin).distanceTo(currentIntersection);
+        if (0 < currentDistance && currentDistance < distance) {
+            var surface = currentSurface;
+            var intersection = currentIntersection;
+            var distance = currentDistance;
+        }
+    }
+    return {
+        "surface": surface,
+        "intersection": intersection,
+        "distance": distance
+    };
+}
 
 
 //renders the scene
