@@ -38,9 +38,8 @@ function init() {
   canvas = $('#canvas')[0];
   context = canvas.getContext("2d");
   imageBuffer = context.createImageData(canvas.width, canvas.height); //buffer for pixels
-  loadSceneFile("assets/SphereTest.json");
+  loadSceneFile("assets/DepthTest2.json");
 }
-
 var pointLight, ambientLight, directionalLight; // TODO: have set of "light" objects read individually, allowing multiple light sources
 //loads and "parses" the scene file at the given path
 function loadSceneFile(filepath) {
@@ -497,9 +496,18 @@ $(document).ready(function(){
     antialiasing = false;
     softShadows = false;
     depthOfField = false;
+    if(document.getElementById('antialiasing').checked) {
+      antialiasing = true;
+    }
+    if(document.getElementById('soft_shadows').checked) {
+      softShadows = true;
+    }
+    if(document.getElementById('depth_of_field').checked) {
+      depthOfField = true;
+    }
     var filepath = 'assets/'+$('#scene_file_input').val()+'.json';
     loadSceneFile(filepath);
-    });
+  });
 
   //debugging - cast a ray through the clicked pixel with DEBUG messaging on
   $('#canvas').click(function(e){
