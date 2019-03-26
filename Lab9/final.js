@@ -301,10 +301,7 @@ function trace(ray, depth) {
       var reflection = null;
       var reflectionRay = surface.reflection(ray);
       if (reflectionRay !== null) {
-          if (DEBUG) console.log("Decending to level " + (depth + 1) + ".");
           reflection = trace(reflectionRay, depth + 1);
-          if (DEBUG) console.log("Accending to level " + depth + ".");
-          if (DEBUG) console.log(reflection);
       }
       if (reflection !== null) {
           // Incorporate the reflection coordinates
@@ -324,9 +321,6 @@ function trace(ray, depth) {
           R = R + aR;
           G = G + aG;
           B = B + aB;
-
-          if (DEBUG) console.log("Ambient light added:");
-          if (DEBUG) console.log([aR, aG, aB]);
       }
       else if (light instanceof PointLight) {
           if (surface instanceof Triangle) {
@@ -389,10 +383,7 @@ function trace(ray, depth) {
               "direction": toLight
           };
 
-          var inShadow = true;
           var shadowCaster = closestSurface(lightRay);
-
-          if (shadowCaster.distance === Infinity) inShadow = false;
 
           var h = new THREE.Vector3().subVectors(lightRay.direction, ray.direction).normalize();
           var m = Math.max(0, normal.dot(lightRay.direction));
