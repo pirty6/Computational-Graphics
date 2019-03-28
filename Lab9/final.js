@@ -41,9 +41,12 @@ var Ray = function(origin, direction) {
 }
 
 var Sphere = function(material, center, radius, objname, transformations) {
+  // Surface.call(this, material, objname, transformations);
   this.center = center;
   this.radius = radius;
-  Surface.call(this, material, objname, transformations);
+  this.material = material;
+  this.objname = objname;
+  this.transforms = transformations;
 }
 
 // Return the normal at the given point.
@@ -113,23 +116,28 @@ var Material = function(name, shininess, ka, kd, ks, kr) {
 }
 
 var Surface = function(material, objname, transforms) {
-    this.material = material;
-    this.objname = objname;
-    this.transformations = new THREE.Matrix4();
-
-    if (transforms) for (var transformation of transforms) {
-        var x = transformation[1][0];
-        var y = transformation[1][1];
-        var z = transformation[1][2];
-        if (transformation[0] === "Translate") this.transformations
-            .multiply(new THREE.Matrix4().makeTranslation(x, y, z));
-        else if (transformation[0] === "Scale") this.transformations
-            .multiply(new THREE.Matrix4().makeScale(x, y, z));
-        else if (transformation[0] === "Rotate") this.transformations
-            .multiply(new THREE.Matrix4().makeRotationX(x))
-            .multiply(new THREE.Matrix4().makeRotationY(y))
-            .multiply(new THREE.Matrix4().makeRotationZ(z));
+  this.material = material;
+  this.objname = objname;
+  this.transformations = new THREE.Matrix4();
+  if (transforms) {
+    for (var transformation of transforms) {
+      var x = transformation[1][0];
+      var y = transformation[1][1];
+      var z = transformation[1][2];
+      if (transformation[0] === "Translate") {
+        this.transformations.multiply(new THREE.Matrix4().makeTranslation(x, y, z));
+      }
+      if (transformation[0] === "Scale") {
+        this.transformations.multiply(new THREE.Matrix4().makeScale(x, y, z));
+      }
+      if (transformation[0] === "Rotate") {
+        this.transformations
+        .multiply(new THREE.Matrix4().makeRotationX(rad(x)))
+        .multiply(new THREE.Matrix4().makeRotationY(rad(y)))
+        .multiply(new THREE.Matrix4().makeRotationZ(rad(z)));
+      }
     }
+  }
 }
 
 var Intersection = function(surface, intersection, distance) {
@@ -139,10 +147,13 @@ var Intersection = function(surface, intersection, distance) {
 }
 
 var Triangle = function(material, p1, p2, p3, objname, transforms) {
-    Surface.call(this, material, objname, transforms);
+    // Surface.call(this, material, objname, transforms);
     this.p1 = p1;
     this.p2 = p2;
     this.p3 = p3;
+    this.material = material;
+    this.objname = objname;
+    this.transforms = transforms;
 }
 
 // Return the normal at the given point.
@@ -213,9 +224,9 @@ function init() {
   context = canvas.getContext("2d");
   imageBuffer = context.createImageData(canvas.width, canvas.height); //buffer for pixels
 
-  loadSceneFile("assets/SphereTest.json");
+  loadSceneFile("assets/TransformationTest.json");
 }
-
+var hewwo = -1;
 //loads and "parses" the scene file at the given path
 function loadSceneFile(filepath) {
   scene = Utils.loadJSON(filepath); //load the scene
@@ -229,15 +240,32 @@ function loadSceneFile(filepath) {
 
   surfaces = [];
   for(var i = 0; i < scene.surfaces.length; i++) {
+    var transform = new THREE.Matrix4();
     var currentSurface = scene.surfaces[i];
+    if(currentSurface.transforms) {
+      for(var j = 0; j < currentSurface.transforms.length; j++) {
+        var transformation = currentSurface.transforms[j];
+        if(transformation[0] === "Translate") {
+          transform.multiply(new THREE.Matrix4().makeTranslation(transformation[1][0], transformation[1][1], transformation[1][2]));
+        }
+        if(transformation[0] === "Rotate") {
+          transform.multiply(new THREE.Matrix4().makeRotationX(rad(transformation[1][0])));
+          transform.multiply(new THREE.Matrix4().makeRotationY(rad(transformation[1][1])));
+          transform.multiply(new THREE.Matrix4().makeRotationZ(rad(transformation[1][2])));
+        }
+        if(transformation[0] === "Scale") {
+          transform.multiply(new THREE.Matrix4().makeScale(transformation[1][0], transformation[1][1], transformation[1][2]));
+        }
+      }
+    }
     if(currentSurface.shape === "Sphere") {
       var center = new THREE.Vector3().fromArray(currentSurface.center);
-      surfaces.push(new Sphere(currentSurface.material, center, currentSurface.radius, currentSurface.name, currentSurface.transforms));
+      surfaces.push(new Sphere(currentSurface.material, center, currentSurface.radius, currentSurface.name, transform));
     } else if(currentSurface.shape === "Triangle") {
       var p1 = new THREE.Vector3().fromArray(currentSurface.p1);
       var p2 = new THREE.Vector3().fromArray(currentSurface.p2);
       var p3 = new THREE.Vector3().fromArray(currentSurface.p3);
-      surfaces.push(new Triangle(currentSurface.material,p1, p2, p3, currentSurface.name, currentSurface.transforms));
+      surfaces.push(new Triangle(currentSurface.material,p1, p2, p3, currentSurface.name, transform));
     }
   }
 
@@ -263,26 +291,49 @@ function loadSceneFile(filepath) {
 }
 
 function closestSurface(ray) {
-    var surface = null
-    var intersection = null;
-    var distance = Infinity;
-    for (var currentSurface of surfaces) {
-        var currentIntersection = currentSurface.intersects(ray);
-        if (currentIntersection === null) continue;
-        var currentDistance = (ray.origin).distanceTo(currentIntersection);
-        if (0 < currentDistance && currentDistance < distance) {
-            var surface = currentSurface;
-            var intersection = currentIntersection;
-            var distance = currentDistance;
-        }
+  var surface = null
+  var intersection = null;
+  var distance = Infinity;
+  for (var currentSurface of surfaces) {
+    var transformInverse = new THREE.Matrix4().getInverse(currentSurface.transforms);
+    //var transformedDirection = rayVector.direction.applyMatrix4(transformInverse);
+    var transformedDirection = new THREE.Vector4(
+        ray.direction.x,
+        ray.direction.y,
+        ray.direction.z,
+        0
+    ).applyMatrix4(transformInverse);
+    //var transformedOrigin = rayVector.eye.applyMatrix4(transformInverse);
+    var transformedOrigin = new THREE.Vector4(
+      ray.origin.x,
+      ray.origin.y,
+      ray.origin.z,
+      1
+    ).applyMatrix4(transformInverse);
+    var newOrigin = new THREE.Vector3(transformedOrigin.x, transformedOrigin.y, transformedOrigin.z);
+    var newDirection = new THREE.Vector3(transformedDirection.x, transformedDirection.y, transformedDirection.z);
+    var transformedRay = new Ray(newOrigin, newDirection);
+    var currentIntersection = currentSurface.intersects(transformedRay);
+    if (currentIntersection !== null) {
+      var currentDistance = new THREE.Vector3().subVectors(currentIntersection, transformedRay.origin);
+      if (currentDistance.length() < distance) {
+        var surface = currentSurface;
+        var intersection = currentIntersection;
+        var distance = currentDistance.length();
+      }
     }
-    return new Intersection(surface, intersection, distance);
+  }
+  return new Intersection(surface, intersection, distance);
 }
 
 function trace(ray, depth) {
   var color = [0, 0, 0];
 
   var closest = closestSurface(ray);
+  // if(closest.surface != null && hewwo < 0)  {
+  //   console.log(closest);
+  //   hewwo++;
+  // }
   if (depth > bounce_depth || closest.surface == null) {
     return color;
   }
@@ -299,6 +350,10 @@ function trace(ray, depth) {
 
   if (material.kr) {
       var reflection = null;
+      if(hewwo < 0){
+        console.log(material);
+        hewwo++;
+      }
       var reflectionRay = surface.reflection(ray);
       if (reflectionRay !== null) {
           reflection = trace(reflectionRay, depth + 1);
