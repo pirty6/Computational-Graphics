@@ -6,9 +6,6 @@ var canvas, context, imageBuffer;
 var DEBUG = false; //whether to show debug messages
 var EPSILON = 0.00001; //error margins
 
-var antialiasing_level = 8;
-var penumbra_level = 1;
-
 //scene to render
 var scene, camera, surfaces, lights, materials, bounce_depth = 0, shadow_bias = EPSILON; //etc...
 
@@ -75,35 +72,32 @@ Sphere.prototype.intersects = function(ray) {
 // Return the reflection ray given an incomming ray.
 Sphere.prototype.reflection = function(ray) {
   var intersection = this.intersects(ray);
-  var normal = this.normal(intersection);
-  var reflection = new THREE.Vector3()
-  .copy(normal)
-  .multiplyScalar(normal.dot(ray.direction) * 2)
-  .sub(ray.direction)
-  .negate();
-  return {
-    "origin": intersection,
-    "direction": reflection
+  if(intersection) {
+    var normal = this.normal(intersection);
+    var reflection = new THREE.Vector3()
+    .copy(normal)
+    .multiplyScalar(normal.dot(ray.direction) * 2)
+    .sub(ray.direction)
+    .negate();
+    return new Ray(intersection, reflection);
   }
 }
 
-var Light = function(source, color) {
+var AmbientLight = function(source, color) {
     this.source = source;
     this.color = color;
 }
 
-var AmbientLight = function(source, color) {
-    Light.call(this, source, color);
-}
-
 var PointLight = function(source, color, position) {
-    Light.call(this, source, color);
-    this.position = new THREE.Vector3().fromArray(position);
+    this.source = source;
+    this.color = color;
+    this.position = position;
 }
 
 var DirectionalLight = function(source, color, direction) {
-    Light.call(this, source, color);
-    this.direction = new THREE.Vector3().fromArray(direction).normalize().negate();
+    this.source = source;
+    this.color = color;
+    this.direction = direction.normalize().negate();
 }
 
 var Material = function(name, shininess, ka, kd, ks, kr) {
@@ -202,10 +196,7 @@ Triangle.prototype.reflection = function(ray) {
         .normalize()
         .multiplyScalar(intersection.length())
         .negate();
-    return {
-        "origin": intersection,
-        "direction": reflection
-    }
+    return new Ray(intersection, reflection);
 }
 
 PointLight.prototype.directionTo = function(point) {
@@ -281,9 +272,11 @@ function loadSceneFile(filepath) {
     if(currentLight.source === "Ambient") {
       lights.push(new AmbientLight(currentLight.source, currentLight.color));
     } else if(currentLight.source === "Point") {
-      lights.push(new PointLight(currentLight.source, currentLight.color, currentLight.position));
+      var position = new THREE.Vector3().fromArray(currentLight.position);
+      lights.push(new PointLight(currentLight.source, currentLight.color, position));
     } else if(currentLight.source === "Directional") {
-      lights.push(new DirectionalLight(currentLight.source, currentLight.color, currentLight.direction));
+      var direction = new THREE.Vector3().fromArray(currentLight.direction)
+      lights.push(new DirectionalLight(currentLight.source, currentLight.color, direction));
     }
   }
 
@@ -330,10 +323,6 @@ function trace(ray, depth) {
   var color = [0, 0, 0];
 
   var closest = closestSurface(ray);
-  // if(closest.surface != null && hewwo < 0)  {
-  //   console.log(closest);
-  //   hewwo++;
-  // }
   if (depth > bounce_depth || closest.surface == null) {
     return color;
   }
@@ -350,32 +339,26 @@ function trace(ray, depth) {
 
   if (material.kr) {
       var reflection = null;
-      if(hewwo < 0){
-        console.log(material);
-        hewwo++;
-      }
       var reflectionRay = surface.reflection(ray);
-      if (reflectionRay !== null) {
+      // if(hewwo < 0){
+        //   console.log(material);
+        //   hewwo++;
+        // }
+      if (reflectionRay) {
           reflection = trace(reflectionRay, depth + 1);
       }
-      if (reflection !== null) {
-          // Incorporate the reflection coordinates
-          R = material.kr[0] * reflection[0] + (1 - material.kr[0]) * R;
-          G = material.kr[1] * reflection[1] + (1 - material.kr[1]) * G;
-          B = material.kr[2] * reflection[2] + (1 - material.kr[2]) * B;
+      if (reflection) {
+        for(var i = 0; i < 3; i++) {
+          color[i] = material.kr[i] * reflection[i] + (1 - material.kr[i]) * color[i];
+        }
       }
   }
 
-  // For each light, add the color imparted.
   for (var light of lights) {
       if (light instanceof AmbientLight) {
-          // Ambient Shading Calculation
-          var aR = material.ka[0] * light.color[0];
-          var aG = material.ka[1] * light.color[1];
-          var aB = material.ka[2] * light.color[2];
-          R = R + aR;
-          G = G + aG;
-          B = B + aB;
+        for(var i = 0; i < 3; i++) {
+          color[i] += material.ka[i] * light.color[i];
+        }
       }
       else if (light instanceof PointLight) {
           if (surface instanceof Triangle) {
@@ -391,40 +374,29 @@ function trace(ray, depth) {
           var verticalAxis = new THREE.Vector3().crossVectors(fromLight, horizontalAxis).normalize();
 
           var obstructions = 0;
-          for (var i = 0; i < penumbra_level; i++) {
+          for (var i = 0; i < 1; i++) {
                   var horizontalOffset = Math.random() - 0.5;
                   var verticalOffset = Math.random() - 0.5;
 
-                  var shadowRay = {
-                      "origin": offsetIntersection,
-                      "direction": new THREE.Vector3()
-                          .copy(toLight)
-                          .add(horizontalAxis.clone().multiplyScalar(horizontalOffset))
-                          .add(verticalAxis.clone().multiplyScalar(verticalOffset))
-                          .normalize()
-                  };
+                  var shadowRay = new Ray(offsetIntersection, new THREE.Vector3()
+                      .copy(toLight)
+                      .add(horizontalAxis.clone().multiplyScalar(horizontalOffset))
+                      .add(verticalAxis.clone().multiplyScalar(verticalOffset))
+                      .normalize());
 
                   var shadowCaster = closestSurface(shadowRay);
 
-                  if (shadowCaster.distance < offsetIntersection.distanceTo(light.position) * (1 + EPSILON)) obstructions++;
+                  if (shadowCaster.distance < 1000000 * (1 + EPSILON)) obstructions++;
           }
-          var occlusion = obstructions / Math.pow(penumbra_level, 2);
+          var occlusion = obstructions / Math.pow(1, 2);
           var shadowFactor = 1 - occlusion;
               var h = new THREE.Vector3().subVectors(shadowRay.direction, ray.direction).normalize();
               var m = Math.max(0, normal.dot(shadowRay.direction));
               var p = Math.pow(Math.max(0, normal.dot(h)), material.shininess);
 
-              var dR = material.kd[0] * light.color[0] * m;
-              var dG = material.kd[1] * light.color[1] * m;
-              var dB = material.kd[2] * light.color[2] * m;
-
-              var sR = material.ks[0] * light.color[0] * p;
-              var sG = material.ks[1] * light.color[1] * p;
-              var sB = material.ks[2] * light.color[2] * p;
-
-              R = R + (dR + sR) * shadowFactor;
-              G = G + (dG + sG) * shadowFactor;
-              B = B + (dB + sB) * shadowFactor;
+              for(var i = 0; i < 3; i++) {
+                color[i] += ((material.kd[i] * light.color[i] * m) + (material.ks[i] * light.color[i] * p)) * shadowFactor;
+              }
       }
       else if (light instanceof DirectionalLight) {
           if (surface instanceof Triangle) {
@@ -433,10 +405,7 @@ function trace(ray, depth) {
           var offsetIntersection = new THREE.Vector3().copy(normal).multiplyScalar(shadow_bias).add(intersection);
           var toLight = light.directionTo(offsetIntersection).negate();
 
-          var lightRay = {
-              "origin": offsetIntersection,
-              "direction": toLight
-          };
+          var lightRay = new Ray(offsetIntersection, toLight);
 
           var shadowCaster = closestSurface(lightRay);
 
@@ -444,30 +413,21 @@ function trace(ray, depth) {
           var m = Math.max(0, normal.dot(lightRay.direction));
           var p = Math.pow(Math.max(0, normal.dot(h)), material.shininess);
 
-          var dR = material.kd[0] * light.color[0] * m;
-          var dG = material.kd[1] * light.color[1] * m;
-          var dB = material.kd[2] * light.color[2] * m;
-
-          var sR = material.ks[0] * light.color[0] * p;
-          var sG = material.ks[1] * light.color[1] * p;
-          var sB = material.ks[2] * light.color[2] * p;
-
-          R = R + dR + sR;
-          G = G + dG + sG;
-          B = B + dB + sB;
-
+          for(var i = 0; i < 3; i++) {
+            color[i] += ((material.kd[i] * light.color[i] * m) + (material.ks[i] * light.color[i] * p)) * shadowFactor;
+          }
       }
   }
 
-  return [R, G, B];
+  return color;
 }
 
 //renders the scene
 function render() {
   var start = Date.now(); //for logging
-  var color = [0, 0, 0];
   for (var x = 0; x < canvas.width; x++) {
       for (var y = 0; y < canvas.height; y++) {
+        var color = [0, 0, 0];
         for(var i = 0; i < 8; i++) {
           for(var j = 0; j < 8; j++) {
             var ray = camera.castRay(x + (i + Math.random()) / 8, y + (j + Math.random()) / 8);
