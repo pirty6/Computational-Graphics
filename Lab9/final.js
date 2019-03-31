@@ -297,12 +297,7 @@ function closestSurface(ray) {
         0
     ).applyMatrix4(transformInverse);
     //var transformedOrigin = rayVector.eye.applyMatrix4(transformInverse);
-    var transformedOrigin = new THREE.Vector4(
-      ray.origin.x,
-      ray.origin.y,
-      ray.origin.z,
-      1
-    ).applyMatrix4(transformInverse);
+    var transformedOrigin = new THREE.Vector4(ray.origin.x, ray.origin.y,ray.origin.z, 1).applyMatrix4(transformInverse);
     var newOrigin = new THREE.Vector3(transformedOrigin.x, transformedOrigin.y, transformedOrigin.z);
     var newDirection = new THREE.Vector3(transformedDirection.x, transformedDirection.y, transformedDirection.z);
     var transformedRay = new Ray(newOrigin, newDirection);
@@ -340,10 +335,6 @@ function trace(ray, depth) {
   if (material.kr) {
       var reflection = null;
       var reflectionRay = surface.reflection(ray);
-      // if(hewwo < 0){
-        //   console.log(material);
-        //   hewwo++;
-        // }
       if (reflectionRay) {
           reflection = trace(reflectionRay, depth + 1);
       }
@@ -362,36 +353,45 @@ function trace(ray, depth) {
       }
       else if (light instanceof PointLight) {
           if (surface instanceof Triangle) {
-              if (normal.angleTo(light.directionTo(intersection)) < Math.PI / 2) normal.negate();
+              (normal.angleTo(light.directionTo(intersection)) < Math.PI / 2) ? normal.negate() : null;
           }
 
           var offsetIntersection = new THREE.Vector3().copy(normal).multiplyScalar(shadow_bias).add(intersection);
+          var offsetIntersection_aux = new THREE.Vector3().copy(normal).multiplyScalar(shadow_bias+1).add(intersection);
 
           var fromLight = light.directionTo(offsetIntersection);
+          var fromLight_aux = light.directionTo(offsetIntersection_aux);
           var toLight = fromLight.clone().negate();
 
-          var horizontalAxis = new THREE.Vector3().set(-1, 1, (fromLight.x - fromLight.y) / fromLight.z).normalize();
+          var shadowRay_1 = new Ray(offsetIntersection, new THREE.Vector3().copy(toLight).normalize());
+
+          var horizontalAxis = new THREE.Vector3().crossVectors(fromLight_aux, fromLight).normalize();
           var verticalAxis = new THREE.Vector3().crossVectors(fromLight, horizontalAxis).normalize();
 
+          var occlusion = 0;
+          var shadowRay;
+
           var obstructions = 0;
-          for (var i = 0; i < 1; i++) {
+          var num_of_area_points = 200;
+          for (var i = 0; i < num_of_area_points; i++) {
                   var horizontalOffset = Math.random() - 0.5;
                   var verticalOffset = Math.random() - 0.5;
 
-                  var shadowRay = new Ray(offsetIntersection, new THREE.Vector3()
-                      .copy(toLight)
-                      .add(horizontalAxis.clone().multiplyScalar(horizontalOffset))
-                      .add(verticalAxis.clone().multiplyScalar(verticalOffset))
-                      .normalize());
+                  var areaPoint = light.position.clone().add(horizontalAxis.clone().multiplyScalar(horizontalOffset)).add(verticalAxis.clone().multiplyScalar(verticalOffset));
+                  var dirTo = new THREE.Vector3().subVectors(offsetIntersection, areaPoint).normalize();
+                  shadowRay = new Ray(offsetIntersection, new THREE.Vector3()
+                  .copy(dirTo)
+                  .negate()
+                  .normalize());
 
                   var shadowCaster = closestSurface(shadowRay);
 
-                  if (shadowCaster.distance < 1000000 * (1 + EPSILON)) obstructions++;
+                  (shadowCaster.distance < offsetIntersection.distanceTo(areaPoint) * (1 + EPSILON)) ? obstructions++ : null;
           }
-          var occlusion = obstructions / Math.pow(1, 2);
+          occlusion = obstructions / num_of_area_points;
           var shadowFactor = 1 - occlusion;
-              var h = new THREE.Vector3().subVectors(shadowRay.direction, ray.direction).normalize();
-              var m = Math.max(0, normal.dot(shadowRay.direction));
+              var h = new THREE.Vector3().subVectors(shadowRay_1.direction, ray.direction).normalize();
+              var m = Math.max(0, normal.dot(shadowRay_1.direction));
               var p = Math.pow(Math.max(0, normal.dot(h)), material.shininess);
 
               for(var i = 0; i < 3; i++) {
@@ -428,18 +428,23 @@ function render() {
   for (var x = 0; x < canvas.width; x++) {
       for (var y = 0; y < canvas.height; y++) {
         var color = [0, 0, 0];
-        for(var i = 0; i < 8; i++) {
-          for(var j = 0; j < 8; j++) {
-            var ray = camera.castRay(x + (i + Math.random()) / 8, y + (j + Math.random()) / 8);
-            var col = trace(ray, 0);
-            for(var k = 0; k < 3; k++) {
-              color[k] += col[k];
-            }
-          }
+        var ray = camera.castRay(x, y);
+        var c = trace(ray, 0);
+        for(var i = 0; i < 3; i++) {
+          color[i] += c[i];
         }
-        for(var m = 0; m < 3; m++) {
-          color[m] /= Math.pow(8, 2);
-        }
+        // for(var i = 0; i < 8; i++) {
+        //   for(var j = 0; j < 8; j++) {
+        //     var ray = camera.castRay(x + (i + Math.random()) / 8, y + (j + Math.random()) / 8);
+        //     var col = trace(ray, 0);
+        //     for(var k = 0; k < 3; k++) {
+        //       color[k] += col[k];
+        //     }
+        //   }
+        // }
+        // for(var m = 0; m < 3; m++) {
+        //   color[m] /= Math.pow(8, 2);
+        // }
         setPixel(x, y, color);
       }
   }
